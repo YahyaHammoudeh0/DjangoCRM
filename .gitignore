@@ -16,3 +16,6 @@ local_settings.py
 .vscode/
 .idea/
 *.swp
+
+#BAML
+clients.baml
