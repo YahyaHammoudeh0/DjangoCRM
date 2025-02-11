@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Layout from "../components/layout"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -15,69 +15,59 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-const initialClients = [
-  {
-    id: 1,
-    name: "Acme Corp",
-    industry: "Technology",
-    country: "USA",
-    contactPerson: "John Doe",
-    email: "john@acme.com",
-    phone: "123-456-7890",
-  },
-  {
-    id: 2,
-    name: "Global Industries",
-    industry: "Manufacturing",
-    country: "Germany",
-    contactPerson: "Anna Schmidt",
-    email: "anna@global.com",
-    phone: "987-654-3210",
-  },
-  {
-    id: 3,
-    name: "Tech Innovators",
-    industry: "Software",
-    country: "UK",
-    contactPerson: "James Wilson",
-    email: "james@techinnovators.com",
-    phone: "456-789-0123",
-  },
-  {
-    id: 4,
-    name: "Green Energy Co",
-    industry: "Energy",
-    country: "Canada",
-    contactPerson: "Emily Brown",
-    email: "emily@greenenergy.com",
-    phone: "789-012-3456",
-  },
-  {
-    id: 5,
-    name: "Fashion Forward",
-    industry: "Retail",
-    country: "France",
-    contactPerson: "Sophie Martin",
-    email: "sophie@fashionforward.com",
-    phone: "234-567-8901",
-  },
-]
+import { fetchCompanies, createCompany, type CompanyInfo } from "@/lib/api"
 
 export default function Clients() {
-  const [clients, setClients] = useState(initialClients)
-  const [newClient, setNewClient] = useState({
-    name: "",
+  const [clients, setClients] = useState<CompanyInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [newClient, setNewClient] = useState<CompanyInfo>({
+    company_name: "",
     industry: "",
+    employee_count: 0,
+    budget_estimate: 0,
     country: "",
-    contactPerson: "",
-    email: "",
-    phone: "",
+    company_needs: "",
+    description: "",
+    contact_type: "CLIENT"
   })
 
-  const addClient = () => {
-    setClients([...clients, { ...newClient, id: clients.length + 1 }])
-    setNewClient({ name: "", industry: "", country: "", contactPerson: "", email: "", phone: "" })
+  useEffect(() => {
+    loadClients()
+  }, [])
+
+  async function loadClients() {
+    try {
+      setLoading(true)
+      const data = await fetchCompanies('CLIENT')
+      setClients(data)
+      setError(null)
+    } catch (err) {
+      setError('Failed to load clients')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function addClient() {
+    try {
+      const newClientData = await createCompany(newClient)
+      setClients([...clients, newClientData])
+      setNewClient({
+        company_name: "",
+        industry: "",
+        employee_count: 0,
+        budget_estimate: 0,
+        country: "",
+        company_needs: "",
+        description: "",
+        contact_type: "CLIENT"
+      })
+    } catch (err) {
+      setError('Failed to create client')
+      console.error(err)
+    }
   }
 
   return (
@@ -97,13 +87,13 @@ export default function Clients() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
+                <Label htmlFor="company_name" className="text-right">
+                  Company Name
                 </Label>
                 <Input
-                  id="name"
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                  id="company_name"
+                  value={newClient.company_name}
+                  onChange={(e) => setNewClient({ ...newClient, company_name: e.target.value })}
                   className="col-span-3"
                 />
               </div>
@@ -119,6 +109,28 @@ export default function Clients() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="employee_count" className="text-right">
+                  Employees
+                </Label>
+                <Input
+                  id="employee_count"
+                  value={newClient.employee_count}
+                  onChange={(e) => setNewClient({ ...newClient, employee_count: parseInt(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="budget_estimate" className="text-right">
+                  Budget
+                </Label>
+                <Input
+                  id="budget_estimate"
+                  value={newClient.budget_estimate}
+                  onChange={(e) => setNewClient({ ...newClient, budget_estimate: parseInt(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="country" className="text-right">
                   Country
                 </Label>
@@ -130,35 +142,24 @@ export default function Clients() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="contactPerson" className="text-right">
-                  Contact Person
+                <Label htmlFor="company_needs" className="text-right">
+                  Needs
                 </Label>
                 <Input
-                  id="contactPerson"
-                  value={newClient.contactPerson}
-                  onChange={(e) => setNewClient({ ...newClient, contactPerson: e.target.value })}
+                  id="company_needs"
+                  value={newClient.company_needs}
+                  onChange={(e) => setNewClient({ ...newClient, company_needs: e.target.value })}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
+                <Label htmlFor="description" className="text-right">
+                  Description
                 </Label>
                 <Input
-                  id="email"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="phone" className="text-right">
-                  Phone
-                </Label>
-                <Input
-                  id="phone"
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                  id="description"
+                  value={newClient.description}
+                  onChange={(e) => setNewClient({ ...newClient, description: e.target.value })}
                   className="col-span-3"
                 />
               </div>
@@ -175,23 +176,25 @@ export default function Clients() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>Company Name</TableHead>
               <TableHead>Industry</TableHead>
+              <TableHead>Employees</TableHead>
+              <TableHead>Budget</TableHead>
               <TableHead>Country</TableHead>
-              <TableHead>Contact Person</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
+              <TableHead>Needs</TableHead>
+              <TableHead>Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {clients.map((client) => (
               <TableRow key={client.id}>
-                <TableCell>{client.name}</TableCell>
+                <TableCell>{client.company_name}</TableCell>
                 <TableCell>{client.industry}</TableCell>
+                <TableCell>{client.employee_count}</TableCell>
+                <TableCell>${client.budget_estimate}</TableCell>
                 <TableCell>{client.country}</TableCell>
-                <TableCell>{client.contactPerson}</TableCell>
-                <TableCell>{client.email}</TableCell>
-                <TableCell>{client.phone}</TableCell>
+                <TableCell>{client.company_needs}</TableCell>
+                <TableCell>{client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

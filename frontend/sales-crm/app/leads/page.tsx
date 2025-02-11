@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Layout from "../components/layout"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -17,165 +17,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-
-const initialLeads = [
-  {
-    id: 1,
-    type: "Company",
-    name: "Acme Corp",
-    status: "New",
-    source: "Website",
-    country: "USA",
-    phone: "123-456-7890",
-    email: "info@acme.com",
-    description: "Interested in our enterprise solution",
-    aiScore: 85,
-    humanScore: 75,
-  },
-  {
-    id: 2,
-    type: "Person",
-    name: "John Doe",
-    status: "Contacted",
-    source: "Referral",
-    country: "Canada",
-    phone: "234-567-8901",
-    email: "john@example.com",
-    description: "Looking for small business package",
-    aiScore: 62,
-    humanScore: 80,
-  },
-  {
-    id: 3,
-    type: "Company",
-    name: "Tech Innovators",
-    status: "Qualified",
-    source: "Trade Show",
-    country: "UK",
-    phone: "345-678-9012",
-    email: "sales@techinnovators.com",
-    description: "Potential large account",
-    aiScore: 91,
-    humanScore: 88,
-  },
-  {
-    id: 4,
-    type: "Person",
-    name: "Alice Johnson",
-    status: "New",
-    source: "Social Media",
-    country: "Australia",
-    phone: "456-789-0123",
-    email: "alice@example.com",
-    description: "Interested in personal plan",
-    aiScore: 78,
-    humanScore: 70,
-  },
-  {
-    id: 5,
-    type: "Company",
-    name: "Global Solutions Inc.",
-    status: "Lost",
-    source: "Cold Call",
-    country: "Germany",
-    phone: "567-890-1234",
-    email: "info@globalsolutions.com",
-    description: "Budget constraints, may revisit next quarter",
-    aiScore: 45,
-    humanScore: 60,
-  },
-  {
-    id: 6,
-    type: "Person",
-    name: "Emma Wilson",
-    status: "Won",
-    source: "Website",
-    country: "France",
-    phone: "678-901-2345",
-    email: "emma@example.com",
-    description: "Signed up for premium plan",
-    aiScore: 95,
-    humanScore: 92,
-  },
-  {
-    id: 7,
-    type: "Company",
-    name: "Startup Ventures",
-    status: "Qualified",
-    source: "Networking Event",
-    country: "USA",
-    phone: "789-012-3456",
-    email: "hello@startupventures.com",
-    description: "Exploring partnership opportunities",
-    aiScore: 88,
-    humanScore: 85,
-  },
-  {
-    id: 8,
-    type: "Person",
-    name: "Michael Chang",
-    status: "Contacted",
-    source: "Referral",
-    country: "Singapore",
-    phone: "890-123-4567",
-    email: "michael@example.com",
-    description: "Requested product demo",
-    aiScore: 72,
-    humanScore: 78,
-  },
-  {
-    id: 9,
-    type: "Company",
-    name: "EcoTech Solutions",
-    status: "New",
-    source: "Trade Show",
-    country: "Sweden",
-    phone: "901-234-5678",
-    email: "info@ecotechsolutions.com",
-    description: "Interested in green technology integration",
-    aiScore: 82,
-    humanScore: 79,
-  },
-  {
-    id: 10,
-    type: "Person",
-    name: "Sophia Rodriguez",
-    status: "Qualified",
-    source: "Webinar",
-    country: "Spain",
-    phone: "012-345-6789",
-    email: "sophia@example.com",
-    description: "Highly engaged, multiple touchpoints",
-    aiScore: 93,
-    humanScore: 89,
-  },
-]
-
-const leadStatuses = ["New", "Contacted", "Qualified", "Lost", "Won"]
-const leadSources = [
-  "Website",
-  "Referral",
-  "Trade Show",
-  "Social Media",
-  "Cold Call",
-  "Networking Event",
-  "Webinar",
-  "Other",
-]
+import { fetchCompanies, createCompany, type CompanyInfo } from "@/lib/api"
 
 export default function Leads() {
-  const [leads, setLeads] = useState(initialLeads)
-  const [newLead, setNewLead] = useState({
-    type: "Company",
-    name: "",
-    status: "New",
-    source: "",
+  const [leads, setLeads] = useState<CompanyInfo[]>([])
+  const [loading, setLoading] = useState(true) // Remove this line if not needed
+  const [error, setError] = useState<string | null>(null) // Remove this line if not needed
+  const [newLead, setNewLead] = useState<CompanyInfo>({
+    company_name: "",
+    industry: "",
+    employee_count: 0,
+    budget_estimate: 0,
     country: "",
-    phone: "",
-    email: "",
+    company_needs: "",
     description: "",
-    aiScore: 0,
-    humanScore: 0,
+    contact_type: "LEAD"
   })
   const [filters, setFilters] = useState({
     name: "",
@@ -184,37 +40,51 @@ export default function Leads() {
     humanScore: "",
   })
 
-  const addLead = () => {
-    setLeads([
-      ...leads,
-      {
-        ...newLead,
-        id: leads.length + 1,
-        aiScore: Math.floor(Math.random() * 100),
-        humanScore: Math.floor(Math.random() * 100),
-      },
-    ])
-    setNewLead({
-      type: "Company",
-      name: "",
-      status: "New",
-      source: "",
-      country: "",
-      phone: "",
-      email: "",
-      description: "",
-      aiScore: 0,
-      humanScore: 0,
-    })
+  useEffect(() => {
+    loadLeads()
+  }, [])
+
+  async function loadLeads() {
+    try {
+      setLoading(true)
+      const data = await fetchCompanies('LEAD')
+      setLeads(data)
+      setError(null)
+    } catch (err) {
+      setError('Failed to load leads')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function addLead() {
+    try {
+      const newLeadData = await createCompany(newLead)
+      setLeads([...leads, newLeadData])
+      setNewLead({
+        company_name: "",
+        industry: "",
+        employee_count: 0,
+        budget_estimate: 0,
+        country: "",
+        company_needs: "",
+        description: "",
+        contact_type: "LEAD"
+      })
+    } catch (err) {
+      setError('Failed to create lead')
+      console.error(err)
+    }
   }
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       return (
-        lead.name.toLowerCase().includes(filters.name.toLowerCase()) &&
-        (filters.status === "all" || lead.status === filters.status) &&
-        (filters.aiScore === "" || lead.aiScore >= Number.parseInt(filters.aiScore)) &&
-        (filters.humanScore === "" || lead.humanScore >= Number.parseInt(filters.humanScore))
+        lead.company_name.toLowerCase().includes(filters.name.toLowerCase()) &&
+        (filters.status === "all" || lead.contact_type === filters.status) &&
+        (filters.aiScore === "" || (lead.expected_score ?? 0) >= Number.parseInt(filters.aiScore)) &&
+        (filters.humanScore === "" || (lead.expected_score ?? 0) >= Number.parseInt(filters.humanScore))
       )
     })
   }, [leads, filters])
@@ -231,105 +101,64 @@ export default function Leads() {
             <DialogHeader>
               <DialogTitle>Add New Lead</DialogTitle>
               <DialogDescription>
-                Enter the details of the new lead here. Click save when you're done.
+                Enter the company information for the new lead.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="type" className="text-right">
-                  Type
-                </Label>
-                <Select onValueChange={(value) => setNewLead({ ...newLead, type: value })} defaultValue={newLead.type}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select lead type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Company">Company</SelectItem>
-                    <SelectItem value="Person">Person</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
+                <Label htmlFor="company_name" className="text-right">
+                  Company Name
                 </Label>
                 <Input
-                  id="name"
-                  value={newLead.name}
-                  onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
+                  id="company_name"
+                  value={newLead.company_name}
+                  onChange={(e) => setNewLead({ ...newLead, company_name: e.target.value })}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">
-                  Status
-                </Label>
-                <Select
-                  onValueChange={(value) => setNewLead({ ...newLead, status: value })}
-                  defaultValue={newLead.status}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select lead status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leadStatuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="source" className="text-right">
-                  Source
-                </Label>
-                <Select
-                  onValueChange={(value) => setNewLead({ ...newLead, source: value })}
-                  defaultValue={newLead.source}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select lead source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leadSources.map((source) => (
-                      <SelectItem key={source} value={source}>
-                        {source}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="country" className="text-right">
-                  Country
+                <Label htmlFor="industry" className="text-right">
+                  Industry
                 </Label>
                 <Input
-                  id="country"
-                  value={newLead.country}
-                  onChange={(e) => setNewLead({ ...newLead, country: e.target.value })}
+                  id="industry"
+                  value={newLead.industry}
+                  onChange={(e) => setNewLead({ ...newLead, industry: e.target.value })}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="phone" className="text-right">
-                  Phone
+                <Label htmlFor="employee_count" className="text-right">
+                  Employees
                 </Label>
                 <Input
-                  id="phone"
-                  value={newLead.phone}
-                  onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                  id="employee_count"
+                  type="number"
+                  value={newLead.employee_count}
+                  onChange={(e) => setNewLead({ ...newLead, employee_count: parseInt(e.target.value) })}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
+                <Label htmlFor="budget_estimate" className="text-right">
+                  Budget
                 </Label>
                 <Input
-                  id="email"
-                  value={newLead.email}
-                  onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                  id="budget_estimate"
+                  type="number"
+                  value={newLead.budget_estimate}
+                  onChange={(e) => setNewLead({ ...newLead, budget_estimate: parseFloat(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="company_needs" className="text-right">
+                  Needs
+                </Label>
+                <Textarea
+                  id="company_needs"
+                  value={newLead.company_needs}
+                  onChange={(e) => setNewLead({ ...newLead, company_needs: e.target.value })}
                   className="col-span-3"
                 />
               </div>
@@ -365,11 +194,8 @@ export default function Leads() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            {leadStatuses.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status}
-              </SelectItem>
-            ))}
+            <SelectItem value="LEAD">Lead</SelectItem>
+            <SelectItem value="CLIENT">Client</SelectItem>
           </SelectContent>
         </Select>
         <Input
@@ -389,29 +215,27 @@ export default function Leads() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Source</TableHead>
+              <TableHead>Company Name</TableHead>
+              <TableHead>Industry</TableHead>
+              <TableHead>Employees</TableHead>
+              <TableHead>Budget</TableHead>
               <TableHead>Country</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>AI Score</TableHead>
-              <TableHead>Human Score</TableHead>
+              <TableHead>Needs</TableHead>
+              <TableHead>Score</TableHead>
+              <TableHead>Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredLeads.map((lead) => (
               <TableRow key={lead.id}>
-                <TableCell>{lead.type}</TableCell>
-                <TableCell>{lead.name}</TableCell>
-                <TableCell>{lead.status}</TableCell>
-                <TableCell>{lead.source}</TableCell>
+                <TableCell>{lead.company_name}</TableCell>
+                <TableCell>{lead.industry}</TableCell>
+                <TableCell>{lead.employee_count}</TableCell>
+                <TableCell>${lead.budget_estimate}</TableCell>
                 <TableCell>{lead.country}</TableCell>
-                <TableCell>{lead.phone}</TableCell>
-                <TableCell>{lead.email}</TableCell>
-                <TableCell>{lead.aiScore}</TableCell>
-                <TableCell>{lead.humanScore}</TableCell>
+                <TableCell>{lead.company_needs}</TableCell>
+                <TableCell>{lead.expected_score}</TableCell>
+                <TableCell>{lead.created_at ? new Date(lead.created_at).toLocaleDateString() : "N/A"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
