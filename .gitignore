@@ -2,6 +2,7 @@
 venv/
 *.env
 .venv/
+.vs/
 
 # Python
 __pycache__/
@@ -19,3 +20,5 @@ local_settings.py
 
 #BAML
 clients.baml
+
+*.db
