@@ -27,7 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+from corsheaders.defaults import default_headers
 # Application definition
 
 INSTALLED_APPS = [
@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'sales_teams',
     'rest_framework',
     'corsheaders', 
-
+        
 ]
 
 MIDDLEWARE = [
@@ -141,3 +141,7 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # ✅ Allow Next.js frontend
 ]
+
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
+CORS_ALLOW_ALL_ORIGINS = True 

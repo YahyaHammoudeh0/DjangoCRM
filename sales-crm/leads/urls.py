@@ -1,6 +1,7 @@
-from django.urls import path
-from .views import get_people
+﻿from django.urls import path
+from . import views  # ✅ Correct import
 
 urlpatterns = [
-    path('api/people/', get_people, name='people'),
+    path('customers/', views.manage_customers, name='manage_customers'),
+    path('convert-lead/', views.convert_lead_to_customer, name='convert_lead_to_customer'),
 ]

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from leads.models import Person
-# Register your models here.
+from .models import Lead, Customer
 
-admin.site.register(Person)
+admin.site.register(Lead)
+admin.site.register(Customer)
