@@ -19,6 +19,6 @@ local_settings.py
 *.swp
 
 #BAML
-clients.baml
+
 
 *.db

@@ -5,7 +5,6 @@ class LeadInfo{
   employeeCount int?
   budgetEstimate float
   country string
-  companyNeeds string
   description string
   expectedScore float?
 }
@@ -23,7 +22,7 @@ class Leads {
 function ScoreTheLead(lead_info: LeadInfo, lead_examples: LeadExamples) -> Leads {
   // Specify a client as provider/model-name
   // you can use custom LLM params with a custom client name from clients.baml like "client CustomHaiku"
-  client "MyDeepseekV3" // Set OPENAI_API_KEY to use this client.
+  client MyDeepseekV3  // This will now use the client defined in clients.baml
   prompt #"
     Use this content to generate a lead score for the lead info from 1 to 100 using floats.
     
@@ -32,7 +31,6 @@ function ScoreTheLead(lead_info: LeadInfo, lead_examples: LeadExamples) -> Leads
     Employee count {{ lead_info.employeeCount }}
     Budget Estimate {{ lead_info.budgetEstimate }}
     Country {{ lead_info.country }}
-    Company Need {{ lead_info.companyNeeds }}
     Description {{ lead_info.description }}
 
 
@@ -50,7 +48,6 @@ test TestScoreTheLeadWithLowBudget {
       employeeCount 200
       budgetEstimate 2000000.0
       country "USA"
-      companyNeeds "Expansion of AI research and development"
       description "A cutting-edge technology company specializing in artificial intelligence and machine learning solutions."
     }
     lead_examples {
@@ -61,7 +58,6 @@ test TestScoreTheLeadWithLowBudget {
       employeeCount 500
       budgetEstimate 1000000.0
       country "USA"
-      companyNeeds "Investment in R&D"
       description "A leading tech company focusing on innovative solutions."
       expectedScore 95.0
       },
@@ -71,7 +67,6 @@ test TestScoreTheLeadWithLowBudget {
       employeeCount 300
       budgetEstimate 500000.0
       country "Germany"
-      companyNeeds "Expansion of solar panel production"
       description "A company dedicated to providing renewable energy solutions."
       expectedScore 90.0
       }
@@ -83,7 +78,6 @@ test TestScoreTheLeadWithLowBudget {
       employeeCount 50
       budgetEstimate 10000.0
       country "Canada"
-      companyNeeds "Supply chain optimization"
       description "A chain of local grocery stores."
       expectedScore 70.0
       },
@@ -93,7 +87,6 @@ test TestScoreTheLeadWithLowBudget {
       employeeCount 100
       budgetEstimate 20000.0
       country "UK"
-      companyNeeds "Development of online learning platforms"
       description "An educational technology company."
       expectedScore 75.0
       }
@@ -105,7 +98,6 @@ test TestScoreTheLeadWithLowBudget {
       employeeCount 20
       budgetEstimate 5000.0
       country "India"
-      companyNeeds "Modernization of equipment"
       description "A small manufacturing company with outdated equipment."
       expectedScore 40.0
       },
@@ -115,7 +107,6 @@ test TestScoreTheLeadWithLowBudget {
       employeeCount 5
       budgetEstimate 1000.0
       country "Brazil"
-      companyNeeds "Initial funding"
       description "A group of startups struggling to get off the ground."
       expectedScore 30.0
       }
