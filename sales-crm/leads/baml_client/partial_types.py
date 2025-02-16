@@ -16,27 +16,22 @@
 import baml_py
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
-from typing import Dict, Generic, List, Literal, Optional, TypeVar, Union, TypeAlias
+from typing import Dict, Generic, List, Optional, TypeVar, Union, Literal
 
+from . import types
+from .types import Checked, Check
+
+###############################################################################
+#
+#  These types are used for streaming, for when an instance of a type
+#  is still being built up and any of its fields is not yet fully available.
+#
+###############################################################################
 
 T = TypeVar('T')
-CheckName = TypeVar('CheckName', bound=str)
-
-class Check(BaseModel):
-    name: str
-    expression: str
-    status: str
-
-class Checked(BaseModel, Generic[T,CheckName]):
+class StreamState(BaseModel, Generic[T]):
     value: T
-    checks: Dict[CheckName, Check]
-
-def get_checks(checks: Dict[CheckName, Check]) -> List[Check]:
-    return list(checks.values())
-
-def all_succeeded(checks: Dict[CheckName, Check]) -> bool:
-    return all(check.status == "succeeded" for check in get_checks(checks))
-
+    state: Literal["Pending", "Incomplete", "Complete"]
 
 
 class LeadExamples(BaseModel):
@@ -45,14 +40,13 @@ class LeadExamples(BaseModel):
     terribleLeads: List["LeadInfo"]
 
 class LeadInfo(BaseModel):
-    companyName: str
-    industry: str
+    companyName: Optional[str] = None
+    industry: Optional[str] = None
     employeeCount: Optional[int] = None
-    budgetEstimate: float
-    country: str
-    companyNeeds: str
-    description: str
+    budgetEstimate: Optional[float] = None
+    country: Optional[str] = None
+    description: Optional[str] = None
     expectedScore: Optional[float] = None
 
 class Leads(BaseModel):
-    lead_score: float
+    lead_score: Optional[float] = None
