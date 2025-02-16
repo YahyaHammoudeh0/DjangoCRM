@@ -11,7 +11,6 @@ class CustomerSerializer(serializers.ModelSerializer):
         model = Customer
         fields = '__all__'
 
-# ✅ Serializer for Lead Conversion
 class LeadToCustomerSerializer(serializers.Serializer):
     lead_id = serializers.IntegerField()
 
@@ -19,15 +18,19 @@ class LeadToCustomerSerializer(serializers.Serializer):
         lead_id = validated_data.get("lead_id")
         lead = Lead.objects.get(id=lead_id)
 
-        # Convert lead to customer
+        # Convert lead to customer using correct field names
         customer = Customer.objects.create(
-            name=lead.name,
+            company_name=lead.company_name,
             email=lead.email,
             phone=lead.phone,
-            lead=lead  # ✅ Track original lead
+            industry=lead.industry,
+            country=lead.country,
+            converted_from_lead=lead,  # Track original lead
+            contact_person=""  # Add a default value
         )
 
-        # Optional: Delete lead after conversion
-        lead.delete()
+        # Optional: Update lead status
+        lead.status = "Qualified"
+        lead.save()
 
         return customer

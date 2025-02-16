@@ -28,7 +28,17 @@ class Lead(BaseContact):
 
 class Customer(BaseContact):
     address = models.TextField(blank=True, null=True)
+    industry = models.CharField(max_length=255, blank=True, null=True)
+    country = models.CharField(max_length=255, blank=True, null=True)  # Add country field
+    contact_person = models.CharField(max_length=255, blank=True, null=True)
     joined_at = models.DateTimeField(auto_now_add=True)
+    converted_from_lead = models.OneToOneField(
+        Lead,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='converted_customer'
+    )
 
     def __str__(self):
-        return self.name
+        return self.company_name or ''
