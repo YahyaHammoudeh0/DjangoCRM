@@ -9,6 +9,10 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 from .baml_client import reset_baml_env_vars
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from employee.models import Employee
 
 # Load environment variables
 load_dotenv()
@@ -116,3 +120,41 @@ def score_lead(request, pk):
         return Response({'error': 'Lead not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class LeadListCreateView(generics.ListCreateAPIView):
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class AssignLeadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):  # Changed from lead_id to pk to match URL pattern
+        try:
+            lead = Lead.objects.get(pk=pk)
+            employee_id = request.data.get('employee_id')
+            
+            if not employee_id:
+                return Response({"error": "Employee ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                employee = Employee.objects.get(pk=employee_id)
+                lead.assigned_to = employee
+                lead.save()
+                
+                # Return the updated lead data
+                serializer = LeadSerializer(lead)
+                return Response(serializer.data)
+                
+            except Employee.DoesNotExist:
+                return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+        except Lead.DoesNotExist:
+            return Response({"error": "Lead not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

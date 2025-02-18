@@ -17,13 +17,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { getLeads, createLead, rescoreLead, type Lead } from "../services/leadService"
+import { getLeads, createLead, rescoreLead, assignLead, type Lead } from "../services/leadService"
 
 const leadStatuses = ["New", "Contacted", "Qualified", "Unqualified"]
 const leadSources = ["Website", "Referral", "Trade Show", "Social Media", "Cold Call", "Other"]
 
 export default function Leads() {
     const [leads, setLeads] = useState<Lead[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [newLead, setNewLead] = useState<Omit<Lead, 'id' | 'score' | 'created_at'>>({
         company_name: "",
         email: "",
@@ -36,28 +38,91 @@ export default function Leads() {
         country: "",
         description: "",
     })
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedLead, setSelectedLead] = useState<number | null>(null);
+    const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+    const [employees, setEmployees] = useState<any[]>([]); // Replace 'any' with your employee type
 
     useEffect(() => {
         loadLeads()
     }, [])
 
+    useEffect(() => {
+        const fetchEmployees = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/employee/employees/', {
+                    headers: {
+                        'Authorization': `Token ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (!response.ok) throw new Error('Failed to fetch employees');
+                const data = await response.json();
+                setEmployees(data);
+            } catch (error) {
+                console.error("Error fetching employees:", error);
+            }
+        };
+
+        // Call fetchEmployees when the component mounts
+        fetchEmployees();
+    }, []); // Empty dependency array means this runs once when component mounts
+
     const loadLeads = async () => {
         try {
+            setLoading(true)
+            setError(null)
             const data = await getLeads()
-            setLeads(data)
+            setLeads(Array.isArray(data) ? data : [])
         } catch (error) {
-            alert("Failed to load leads")
+            setError("Failed to load leads")
+            console.error(error)
+        } finally {
+            setLoading(false)
         }
     }
 
     const handleSubmit = async () => {
         try {
+            setError(null)
             const lead = await createLead(newLead)
-            setLeads([...leads, lead])
+            setLeads(prevLeads => [...prevLeads, lead])
             alert("Lead added successfully")
         } catch (error) {
-            alert("Failed to add lead")
+            setError("Failed to add lead")
+            console.error(error)
         }
+    }
+
+    const handleAssign = async () => {
+        if (!selectedEmployee || !selectedLead) return;
+        try {
+            await assignLead(selectedLead, parseInt(selectedEmployee));
+            // Refresh the leads list immediately after assignment
+            await loadLeads();
+            setIsDialogOpen(false);
+            setSelectedEmployee("");
+            setSelectedLead(null);
+        } catch (error) {
+            console.error("Error assigning lead:", error);
+            alert("Failed to assign lead. Please try again.");
+        }
+    };
+
+    if (loading) {
+        return (
+            <Layout>
+                <div>Loading leads...</div>
+            </Layout>
+        )
+    }
+
+    if (error) {
+        return (
+            <Layout>
+                <div className="text-red-500">{error}</div>
+            </Layout>
+        )
     }
 
     return (
@@ -120,7 +185,7 @@ export default function Leads() {
                                             <Input
                                                 id={fieldId}
                                                 type={typeof value === 'number' ? 'number' : 'text'}
-                                                value={value}
+                                                value={String(value)}
                                                 onChange={(e) => setNewLead({
                                                     ...newLead,
                                                     [key]: typeof value === 'number' ? Number(e.target.value) : e.target.value
@@ -154,48 +219,100 @@ export default function Leads() {
                             <TableHead>Score</TableHead>
                             <TableHead>Created</TableHead>
                             <TableHead>Description</TableHead>
+                            <TableHead>Assigned To</TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {leads.map((lead) => (
-                            <TableRow key={lead.id}>
-                                <TableCell>{lead.company_name}</TableCell>
-                                <TableCell>{lead.email}</TableCell>
-                                <TableCell>{lead.phone}</TableCell>
-                                <TableCell>{lead.source}</TableCell>
-                                <TableCell>{lead.status}</TableCell>
-                                <TableCell>{lead.industry}</TableCell>
-                                <TableCell>{lead.employee_count}</TableCell>
-                                <TableCell>${lead.budget_estimate?.toLocaleString()}</TableCell>
-                                <TableCell>{lead.country}</TableCell>
-                                <TableCell>{lead.score}</TableCell>
-                                <TableCell>{new Date(lead.created_at).toLocaleDateString()}</TableCell>
-                                <TableCell>{lead.description}</TableCell>
-                                <TableCell>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={async () => {
-                                            try {
-                                                const result = await rescoreLead(lead.id!);
-                                                setLeads(leads.map(l =>
-                                                    l.id === lead.id ? { ...l, score: result.score } : l
-                                                ));
-                                                alert(`New score: ${result.score}`);
-                                            } catch (error) {
-                                                alert("Failed to score lead");
-                                            }
-                                        }}
-                                    >
-                                        Rescore
-                                    </Button>
+                        {leads && leads.length > 0 ? (
+                            leads.map((lead) => (
+                                <TableRow key={lead.id}>
+                                    <TableCell>{lead.company_name}</TableCell>
+                                    <TableCell>{lead.email}</TableCell>
+                                    <TableCell>{lead.phone}</TableCell>
+                                    <TableCell>{lead.source}</TableCell>
+                                    <TableCell>{lead.status}</TableCell>
+                                    <TableCell>{lead.industry}</TableCell>
+                                    <TableCell>{lead.employee_count}</TableCell>
+                                    <TableCell>${lead.budget_estimate?.toLocaleString()}</TableCell>
+                                    <TableCell>{lead.country}</TableCell>
+                                    <TableCell>{lead.score}</TableCell>
+                                    <TableCell>{new Date(lead.created_at).toLocaleDateString()}</TableCell>
+                                    <TableCell>{lead.description}</TableCell>
+                                    <TableCell>
+                                        {lead.assigned_to ? 
+                                            `${lead.assigned_to.first_name} ${lead.assigned_to.last_name}` : 
+                                            'Unassigned'
+                                        }
+                                    </TableCell>
+                                    <TableCell className="space-x-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setSelectedLead(lead.id);
+                                                setIsDialogOpen(true);
+                                            }}
+                                        >
+                                            Assign
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={async () => {
+                                                try {
+                                                    const result = await rescoreLead(lead.id!);
+                                                    setLeads(leads.map(l =>
+                                                        l.id === lead.id ? { ...l, score: result.score } : l
+                                                    ));
+                                                } catch (error) {
+                                                    console.error("Failed to score lead:", error);
+                                                }
+                                            }}
+                                        >
+                                            Rescore
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={13} className="text-center">
+                                    No leads found
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )}
                     </TableBody>
                 </Table>
             </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Assign Lead</DialogTitle>
+                        <DialogDescription>
+                            Select an employee to assign this lead to.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Select onValueChange={setSelectedEmployee} value={selectedEmployee}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select an employee" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {employees.map((employee) => (
+                                <SelectItem key={employee.id} value={employee.id.toString()}>
+                                    {employee.first_name} {employee.last_name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <DialogFooter>
+                        <Button onClick={handleAssign} disabled={!selectedEmployee}>
+                            Assign
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Layout>
-    )
+    );
 }

@@ -1,4 +1,5 @@
 from django.db import models
+from employee.models import Employee
 
 class BaseContact(models.Model):
     company_name = models.CharField(max_length=255, blank=True, null=True)
@@ -22,6 +23,13 @@ class Lead(BaseContact):
     budget_estimate = models.FloatField(null=True, blank=True)
     country = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    assigned_to = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_leads'
+    )
 
     def __str__(self):
         return f"{self.name} ({self.status})"
