@@ -1,8 +1,15 @@
-from rest_framework import viewsets, permissions
+from rest_framework import generics, permissions
 from .models import Invoice
 from .serializers import InvoiceSerializer
 
-class InvoiceViewSet(viewsets.ModelViewSet):
+# create invoices
+class InvoiceListCreateView(generics.ListCreateAPIView):
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
-    permission_classes = [permissions.IsAuthenticated]  # User must be logged in to login.
+    permission_classes = [permissions.IsAuthenticated]
+
+# View, update, and delete a specific invoice
+class InvoiceDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+    permission_classes = [permissions.IsAuthenticated]
