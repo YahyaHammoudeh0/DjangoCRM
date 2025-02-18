@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'leads',
     'sales_teams',
-
+    'invoices',
 ]
 
 MIDDLEWARE = [
