@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'sales_teams',
     'rest_framework',
     'corsheaders', 
-        
+    'employee',
+    'rest_framework.authtoken',  # Add this line
 ]
 
 MIDDLEWARE = [
@@ -119,7 +120,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-
+AUTH_USER_MODEL = 'employee.Employee'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
@@ -132,11 +133,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # Allow all requests
+        'rest_framework.permissions.IsAuthenticated',
     ],
 }
-
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # ✅ Allow Next.js frontend
@@ -144,4 +147,4 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 
-CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_ALL_ORIGINS = True

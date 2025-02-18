@@ -2,10 +2,10 @@
 
 import { useState, type ReactNode, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { MoonIcon, SunIcon, X } from "lucide-react"
-import { LayoutDashboard, Users, FileText, UserCircle, Settings, Menu } from "lucide-react"
+import { MoonIcon, SunIcon, X, Menu } from "lucide-react"
+import { LayoutDashboard, Users, FileText, UserCircle, Settings } from "lucide-react"
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -21,6 +21,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
   const [logo, setLogo] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     // Load logo from localStorage (in a real app, this might come from an API)
@@ -33,6 +34,16 @@ export default function Layout({ children }: { children: ReactNode }) {
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
     document.documentElement.classList.toggle("dark")
+  }
+
+  const handleLogout = () => {
+    // Clear all auth data from localStorage
+    localStorage.removeItem("token")
+    localStorage.removeItem("is_superuser")
+    localStorage.removeItem("username")
+    
+    // Redirect to login page
+    router.push("/login")
   }
 
   return (
@@ -85,9 +96,17 @@ export default function Layout({ children }: { children: ReactNode }) {
               {navItems.find((item) => item.href === pathname)?.name || "Dashboard"}
             </h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-            {darkMode ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {localStorage.getItem("username")}
+            </span>
+            <Button variant="outline" onClick={handleLogout}>
+              Logout
+            </Button>
+            <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+              {darkMode ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+            </Button>
+          </div>
         </header>
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-white dark:bg-gray-950">
           <div className="container mx-auto px-6 py-8">{children}</div>

@@ -21,6 +21,8 @@ import { getLeads, type Lead } from "../services/leadService"
 
 export default function Clients() {
   const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [newClient, setNewClient] = useState<Omit<Client, 'id'>>({
     company_name: "",
     industry: "",
@@ -40,26 +42,34 @@ export default function Clients() {
 
   const loadClients = async () => {
     try {
+      setLoading(true)
+      setError(null)
       const data = await getClients()
-      setClients(data)
+      setClients(Array.isArray(data) ? data : [])
     } catch (error) {
-      console.error("Failed to load clients:", error)
+      setError("Failed to load clients")
+      console.error(error)
+    } finally {
+      setLoading(false)
     }
   }
 
   const loadLeads = async () => {
     try {
+      setError(null)
       const data = await getLeads()
-      setLeads(data)
+      setLeads(Array.isArray(data) ? data : [])
     } catch (error) {
-      console.error("Failed to load leads:", error)
+      setError("Failed to load leads")
+      console.error(error)
     }
   }
 
   const addClient = async () => {
     try {
+      setError(null)
       const client = await createClient(newClient)
-      setClients([...clients, client])
+      setClients(prevClients => [...prevClients, client])
       setNewClient({
         company_name: "",
         industry: "",
@@ -70,20 +80,39 @@ export default function Clients() {
         address: "",
       })
     } catch (error) {
-      alert("Failed to add client")
+      setError("Failed to add client")
+      console.error(error)
     }
   }
 
   const handleConvertLead = async () => {
     if (!selectedLead) return
     try {
+      setError(null)
       const client = await convertLeadToClient(parseInt(selectedLead))
-      setClients([...clients, client])
-      setLeads(leads.filter(lead => lead.id !== parseInt(selectedLead)))
-      alert("Lead converted successfully")
+      setClients(prevClients => [...prevClients, client])
+      setLeads(prevLeads => prevLeads.filter(lead => lead.id !== parseInt(selectedLead)))
+      setSelectedLead("")
     } catch (error) {
-      alert("Failed to convert lead")
+      setError("Failed to convert lead")
+      console.error(error)
     }
+  }
+
+  if (loading) {
+    return (
+      <Layout>
+        <div>Loading clients...</div>
+      </Layout>
+    )
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="text-red-500">{error}</div>
+      </Layout>
+    )
   }
 
   return (
@@ -235,17 +264,25 @@ export default function Clients() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {clients.map((client) => (
-              <TableRow key={client.id}>
-                <TableCell>{client.company_name}</TableCell>
-                <TableCell>{client.industry}</TableCell>
-                <TableCell>{client.country}</TableCell>
-                <TableCell>{client.contact_person}</TableCell>
-                <TableCell>{client.email}</TableCell>
-                <TableCell>{client.phone}</TableCell>
-                <TableCell>{client.address}</TableCell>
+            {clients && clients.length > 0 ? (
+              clients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell>{client.company_name}</TableCell>
+                  <TableCell>{client.industry}</TableCell>
+                  <TableCell>{client.country}</TableCell>
+                  <TableCell>{client.contact_person}</TableCell>
+                  <TableCell>{client.email}</TableCell>
+                  <TableCell>{client.phone}</TableCell>
+                  <TableCell>{client.address}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center">
+                  No clients found
+                </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>

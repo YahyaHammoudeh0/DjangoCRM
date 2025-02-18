@@ -1,7 +1,10 @@
 ﻿from rest_framework import serializers
 from .models import Lead, Customer
+from employee.serializers import EmployeeSerializer
 
 class LeadSerializer(serializers.ModelSerializer):
+    assigned_to = EmployeeSerializer(read_only=True)
+    
     class Meta:
         model = Lead
         fields = '__all__'
