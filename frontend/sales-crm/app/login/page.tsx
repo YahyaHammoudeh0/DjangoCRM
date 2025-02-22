@@ -26,7 +26,7 @@ export default function Login() {
         localStorage.setItem("token", data.token)
         localStorage.setItem("is_superuser", String(!!data.is_superuser))
         localStorage.setItem("username", data.username || "")
-        router.push("/dashboard")
+        router.push("/")
       } else {
         setError("Invalid response from server")
       }
