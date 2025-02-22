@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Layout from "../components/layout"
+import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
@@ -17,34 +18,135 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const initialInvoices = [
-  { id: 1, invoiceNumber: "INV-001", client: "Acme Corp", amount: 5000, status: "Paid", dueDate: "2023-07-15" },
-  { id: 2, invoiceNumber: "INV-002", client: "TechCo", amount: 7500, status: "Pending", dueDate: "2023-07-30" },
-  {
-    id: 3,
-    invoiceNumber: "INV-003",
-    client: "Global Industries",
-    amount: 10000,
-    status: "Overdue",
-    dueDate: "2023-06-30",
-  },
-]
+interface Customer {
+  id: number
+  company_name: string
+}
 
-const invoiceStatuses = ["Draft", "Sent", "Paid", "Overdue"]
+interface Invoice {
+  id: number
+  invoice_number: string
+  customer_details: {
+    company_name: string
+  }
+  total_amount: number
+  status: string
+  due_date: string
+}
 
 export default function Invoices() {
-  const [invoices, setInvoices] = useState(initialInvoices)
+  const { isAuthenticated } = useAuth()
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [newInvoice, setNewInvoice] = useState({
-    invoiceNumber: "",
-    client: "",
-    amount: "",
-    status: "Draft",
-    dueDate: "",
+    invoice_number: "",
+    customer: "",
+    total_amount: "",
+    status: "DRAFT",
+    due_date: "",
   })
 
-  const addInvoice = () => {
-    setInvoices([...invoices, { ...newInvoice, id: invoices.length + 1, amount: Number.parseFloat(newInvoice.amount) }])
-    setNewInvoice({ invoiceNumber: "", client: "", amount: "", status: "Draft", dueDate: "" })
+  const getAuthHeaders = (): Record<string, string> => {
+    if (typeof window === 'undefined') {
+      return {
+        'Content-Type': 'application/json'
+      }
+    }
+    const token = localStorage.getItem('token') || ''
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Token ${token}`
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const fetchData = async () => {
+        setIsLoading(true)
+        try {
+          const headers = getAuthHeaders()
+          const [invRes, custRes] = await Promise.all([
+            fetch('http://localhost:8000/api/invoices/', { headers }),
+            fetch('http://localhost:8000/api/customers/', { headers })
+          ])
+
+          if (!invRes.ok || !custRes.ok) {
+            throw new Error('Failed to fetch data')
+          }
+
+          const [invoicesData, customersData] = await Promise.all([
+            invRes.json(),
+            custRes.json()
+          ])
+
+          // Debug: log invoices data to verify structure
+          console.log("Fetched invoices:", invoicesData)
+
+          setInvoices(invoicesData)
+          setCustomers(customersData)
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'An error occurred')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+
+      fetchData()
+    }
+  }, [isAuthenticated])
+
+  const addInvoice = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/invoices/', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(newInvoice)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create invoice')
+      }
+
+      const data = await response.json()
+      setInvoices(prev => [...prev, data])
+      setNewInvoice({
+        invoice_number: "",
+        customer: "",
+        total_amount: "",
+        status: "DRAFT",
+        due_date: "",
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create invoice')
+    }
+  }
+
+  // Don't render anything while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <Layout>
+        <div className="text-center py-8">
+          Loading...
+        </div>
+      </Layout>
+    )
+  }
+
+  // Not authenticated - handled by useAuth hook with redirect
+  if (!isAuthenticated) {
+    return null
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="text-red-500 text-center py-8">
+          Error: {error}
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -69,8 +171,8 @@ export default function Invoices() {
                 </Label>
                 <Input
                   id="invoiceNumber"
-                  value={newInvoice.invoiceNumber}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, invoiceNumber: e.target.value })}
+                  value={newInvoice.invoice_number}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, invoice_number: e.target.value })}
                   className="col-span-3"
                 />
               </div>
@@ -78,12 +180,21 @@ export default function Invoices() {
                 <Label htmlFor="client" className="text-right">
                   Client
                 </Label>
-                <Input
-                  id="client"
-                  value={newInvoice.client}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, client: e.target.value })}
-                  className="col-span-3"
-                />
+                <Select
+                  onValueChange={(value) => setNewInvoice({ ...newInvoice, customer: value })}
+                  defaultValue={newInvoice.customer}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id.toString()}>
+                        {customer.company_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="amount" className="text-right">
@@ -92,8 +203,8 @@ export default function Invoices() {
                 <Input
                   id="amount"
                   type="number"
-                  value={newInvoice.amount}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, amount: e.target.value })}
+                  value={newInvoice.total_amount}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, total_amount: e.target.value })}
                   className="col-span-3"
                 />
               </div>
@@ -109,7 +220,7 @@ export default function Invoices() {
                     <SelectValue placeholder="Select invoice status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {invoiceStatuses.map((status) => (
+                    {["DRAFT", "SENT", "PAID", "OVERDUE"].map((status) => (
                       <SelectItem key={status} value={status}>
                         {status}
                       </SelectItem>
@@ -124,8 +235,8 @@ export default function Invoices() {
                 <Input
                   id="dueDate"
                   type="date"
-                  value={newInvoice.dueDate}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
+                  value={newInvoice.due_date}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, due_date: e.target.value })}
                   className="col-span-3"
                 />
               </div>
@@ -138,30 +249,39 @@ export default function Invoices() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Invoice Number</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Due Date</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {invoices.map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell>{invoice.invoiceNumber}</TableCell>
-                <TableCell>{invoice.client}</TableCell>
-                <TableCell>${invoice.amount.toFixed(2)}</TableCell>
-                <TableCell>{invoice.status}</TableCell>
-                <TableCell>{invoice.dueDate}</TableCell>
+      
+      {isLoading ? (
+        <div className="text-center py-8">
+          Loading invoices...
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice Number</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Due Date</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {invoices.map((invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell>{invoice.invoice_number || "N/A"}</TableCell>
+                  <TableCell>{invoice.customer_details?.company_name || "N/A"}</TableCell>
+                  <TableCell>
+                    ${invoice.total_amount ? Number(invoice.total_amount).toFixed(2) : "0.00"}
+                  </TableCell>
+                  <TableCell>{invoice.status || "N/A"}</TableCell>
+                  <TableCell>{invoice.due_date || "N/A"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </Layout>
   )
 }
