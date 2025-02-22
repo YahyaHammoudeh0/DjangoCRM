@@ -122,7 +122,8 @@ export default function Employees() {
   }
 
   // Add a helper function to format salary
-  const formatSalary = (salary: string | number): string => {
+  const formatSalary = (salary: string | number | null): string => {
+    if (salary === null || salary === undefined) return '$0.00';
     const numericSalary = typeof salary === 'string' ? parseFloat(salary) : salary;
     return !isNaN(numericSalary) ? `$${numericSalary.toFixed(2)}` : '$0.00';
   };

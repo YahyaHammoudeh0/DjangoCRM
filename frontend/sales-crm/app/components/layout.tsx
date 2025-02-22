@@ -61,8 +61,6 @@ export default function Layout({ children }: { children: ReactNode }) {
             <span className="text-gray-50 text-2xl font-semibold dark:text-gray-900">CRM Pro</span>
           )}
           <Button
-            variant="ghost"
-            size="icon"
             className="lg:hidden text-gray-50 dark:text-gray-900"
             onClick={() => setSidebarOpen(false)}
           >
@@ -85,34 +83,31 @@ export default function Layout({ children }: { children: ReactNode }) {
         </nav>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex justify-between items-center p-4 bg-white shadow dark:bg-gray-950">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" className="lg:hidden mr-2" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <Menu className="h-6 w-6" />
-            </Button>
-            <h1 className="text-2xl font-semibold text-text">
-              {navItems.find((item) => item.href === pathname)?.name || "Dashboard"}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {localStorage.getItem("username")}
-            </span>
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
-            <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-              {darkMode ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
-            </Button>
-          </div>
-        </header>
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-white dark:bg-gray-950">
-          <div className="container mx-auto px-6 py-8">{children}</div>
-        </main>
-      </div>
+    {/* Main content */}
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <header className="flex justify-between items-center p-4 bg-white shadow dark:bg-gray-950">
+        <div className="flex items-center">
+          <Button className="lg:hidden mr-2" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <Menu className="h-6 w-6" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            {localStorage.getItem("username")}
+          </span>
+          <Button onClick={handleLogout}>
+            Logout
+          </Button>
+          <Button onClick={toggleDarkMode}>
+            {darkMode ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+          </Button>
+        </div>
+      </header>
+      <main className="flex-1 overflow-y-auto p-4">
+        {children}
+      </main>
     </div>
+  </div>
   )
 }
 
