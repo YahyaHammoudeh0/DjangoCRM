@@ -38,16 +38,41 @@ export default function Settings() {
   }
 
   const handleColorChange = (colorKey: string, value: string) => {
-    setColors((prevColors) => ({
-      ...prevColors,
-      [colorKey]: value,
-    }))
+    // If value is shorthand e.g. "#3f0", expand it to "#33ff00"
+    if (value.startsWith("#") && value.length === 4) {
+      value = "#" + value[1].repeat(2) + value[2].repeat(2) + value[3].repeat(2);
+    }
+    // Proceed only if the full format matches "#rrggbb"
+    if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+      setColors((prevColors) => ({
+        ...prevColors,
+        [colorKey]: value,
+      }));
+    } else {
+      console.warn("Invalid hex format for", colorKey, ":", value);
+    }
   }
 
-  const saveSettings = () => {
-    // In a real application, you would save these settings to a backend or local storage
-    console.log("Saving settings:", { logo, colors })
-    alert("Settings saved successfully!")
+  const saveSettings = async () => {
+    const res = await fetch("http://localhost:8000/api/settings/", {
+      method: "PUT", // or POST depending on your backend
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ logo, colors })
+    });
+    if (res.ok) {
+      // Reapply new colors immediately after successful save
+      const root = document.documentElement;
+      Object.entries(colors).forEach(([key, value]) => {
+        root.style.setProperty(`--color-${key}`, value);
+      });
+      console.log("Settings saved on backend");
+      // Dispatch an event so that Layout can update global styles
+      window.dispatchEvent(new Event("settingsUpdated"));
+      alert("Settings saved successfully!");
+    } else {
+      console.error("Error saving settings");
+      alert("Failed to save settings");
+    }
   }
 
   return (

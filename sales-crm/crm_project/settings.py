@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'employee',
     'leads',
     'invoices',
+    'settings', 
 ]
 
 MIDDLEWARE = [
