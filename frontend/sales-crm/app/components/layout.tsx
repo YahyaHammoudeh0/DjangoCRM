@@ -24,12 +24,32 @@ export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Load logo from localStorage (in a real app, this might come from an API)
-    const savedLogo = localStorage.getItem("crmLogo")
-    if (savedLogo) {
-      setLogo(savedLogo)
-    }
-  }, [])
+    const fetchSettings = () => {
+      fetch("http://localhost:8000/api/settings/", { credentials: "include" })
+        .then((res) => res.json())
+        .then((settings) => {
+          console.log("Fetched settings:", settings); // Debug log
+          if (settings.logo) {
+            setLogo(settings.logo);
+          }
+          if (settings.colors) {
+            const root = document.documentElement;
+            Object.entries(settings.colors).forEach(([key, value]) => {
+              console.log(`Setting --color-${key} to ${value}`); // Debug log
+              root.style.setProperty(`--color-${key}`, String(value));
+            });
+          }
+        })
+        .catch((err) => console.error("Error fetching settings:", err));
+    };
+
+    // Initial settings fetch
+    fetchSettings();
+
+    // Listen for settingsUpdated event to refresh global CSS variables
+    window.addEventListener("settingsUpdated", fetchSettings);
+    return () => window.removeEventListener("settingsUpdated", fetchSettings);
+  }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
