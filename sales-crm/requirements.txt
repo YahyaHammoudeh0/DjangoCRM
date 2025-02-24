@@ -1,0 +1,5 @@
+Django==5.1.5
+djangorestframework
+django-cors-headers
+python-dotenv
+# ...add other dependencies as needed...
