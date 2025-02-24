@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`;
 
 interface LoginCredentials {
   username: string;
@@ -35,7 +36,7 @@ interface CreateEmployeeData {
 export const API = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
-      const response = await fetch(`${API_URL}/employee/login/`, {
+      const response = await fetch(`${BASE_URL}/api/employee/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ export const API = {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token');
 
-    const response = await fetch(`${API_URL}/employee/employees/`, {
+    const response = await fetch(`${BASE_URL}/api/employee/employees/`, {
       headers: {
         'Authorization': `Token ${token}`,
         'Content-Type': 'application/json',
@@ -91,7 +92,7 @@ export const API = {
         password: '[REDACTED]'
       });
 
-      const response = await fetch(`${API_URL}/employee/employees/`, {
+      const response = await fetch(`${BASE_URL}/api/employee/employees/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -128,7 +129,7 @@ export const API = {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_URL}/employee/logout/`, {
+      const response = await fetch(`${BASE_URL}/api/employee/logout/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -149,7 +150,7 @@ export const API = {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token');
 
-    const response = await fetch(`${API_URL}/leads/`, {
+    const response = await fetch(`${BASE_URL}/api/leads/`, {
       headers: {
         'Authorization': `Token ${token}`,
         'Content-Type': 'application/json',
@@ -169,7 +170,7 @@ export const API = {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token');
 
-    const response = await fetch(`${API_URL}/leads/`, {
+    const response = await fetch(`${BASE_URL}/api/leads/`, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${token}`,
@@ -191,7 +192,7 @@ export const API = {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token');
 
-    const response = await fetch(`${API_URL}/leads/${leadId}/assign/`, {
+    const response = await fetch(`${BASE_URL}/api/leads/${leadId}/assign/`, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${token}`,
@@ -212,7 +213,7 @@ export const API = {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token');
 
-    const response = await fetch(`${API_URL}/leads/${leadId}/score/`, {
+    const response = await fetch(`${BASE_URL}/api/leads/${leadId}/score/`, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${token}`,
