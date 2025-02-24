@@ -15,17 +15,20 @@ from pathlib import Path
 from dotenv import load_dotenv
 from corsheaders.defaults import default_headers
 
-# Load environment variables from .env file
-load_dotenv(override=True)
+# Assuming you moved .env to the project root
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env")  # explicitly load .env from the project root
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*(-tt#tud_@t8dqkbn5^sqg+0l0=zx)le3j!0qc^tg9$96a*+1'
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise Exception("SECRET_KEY environment variable is not set!")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -155,5 +158,11 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     'x-requested-with',
 ]
 
-# Temporarily keeping this for compatibility, but you might want to remove it later
-CORS_ALLOW_ALL_ORIGINS = True
+# Remove or conditionally disable CORS_ALLOW_ALL_ORIGINS based on environment
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True  # convenient for local development
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    # Configure allowed origins via environment variable, comma-separated
+    allowed_origins = os.getenv('DJANGO_CORS_ALLOWED_ORIGINS', "http://localhost:3000").split(',')
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins]

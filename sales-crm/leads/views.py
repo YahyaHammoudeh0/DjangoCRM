@@ -15,8 +15,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from employee.models import Employee
 
-# Load environment variables
-load_dotenv()
+# Compute project root and load .env from the root directory
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env")
+
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 reset_baml_env_vars(dict(os.environ))
 
