@@ -62,7 +62,7 @@ export default function Employees() {
     
     const fetchData = async () => {
       try {
-        const data = await API.getEmployees()
+        const data: Employee[] = await API.getEmployees()
         setEmployees(data)
       } catch (error: unknown) {
         console.error("Error fetching employees:", error)
@@ -141,7 +141,7 @@ export default function Employees() {
               <DialogHeader>
                 <DialogTitle>Add New Employee</DialogTitle>
                 <DialogDescription>
-                  Enter the details of the new employee here. Click save when you're done.
+                  Enter the details of the new employee here. Click save when you&apos;re done.
                 </DialogDescription>
               </DialogHeader>
               {error && (
