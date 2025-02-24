@@ -23,6 +23,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [logo, setLogo] = useState<string | null>(null)
   const router = useRouter()
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     const fetchSettings = () => {
@@ -50,6 +51,12 @@ export default function Layout({ children }: { children: ReactNode }) {
     // Listen for settingsUpdated event to refresh global CSS variables
     window.addEventListener("settingsUpdated", fetchSettings);
     return () => window.removeEventListener("settingsUpdated", fetchSettings);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setUsername(localStorage.getItem("username") || "");
+    }
   }, []);
 
   const toggleDarkMode = () => {
@@ -114,7 +121,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600 dark:text-gray-300">
-            {localStorage.getItem("username")}
+            {username}
           </span>
           <Button onClick={handleLogout}>
             Logout
