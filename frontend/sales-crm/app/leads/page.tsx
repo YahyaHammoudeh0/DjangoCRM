@@ -74,7 +74,7 @@ export default function Leads() {
             setError(null)
             const data = await getLeads()
             setLeads(Array.isArray(data) ? data : [])
-        } catch (error) {
+        } catch (error: unknown) {  // explicitly type as unknown
             setError("Failed to load leads")
             console.error(error)
         } finally {
