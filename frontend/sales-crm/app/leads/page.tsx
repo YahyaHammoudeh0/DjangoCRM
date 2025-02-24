@@ -41,7 +41,7 @@ export default function Leads() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedLead, setSelectedLead] = useState<number | null>(null);
     const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-    const [employees, setEmployees] = useState<any[]>([]); // Replace 'any' with your employee type
+    const [employees, setEmployees] = useState<{ id: number; first_name: string; last_name: string }[]>([]);
 
     useEffect(() => {
         loadLeads()

@@ -88,7 +88,7 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Branding Settings</CardTitle>
-                <CardDescription>Customize your CRM's logo and branding elements.</CardDescription>
+                <CardDescription>Customize your CRM&apos;s logo and branding elements.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
@@ -112,7 +112,7 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Color Settings</CardTitle>
-                <CardDescription>Customize your CRM's color scheme.</CardDescription>
+                <CardDescription>Customize your CRM&apos;s color scheme.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

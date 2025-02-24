@@ -64,10 +64,10 @@ export default function Employees() {
       try {
         const data = await API.getEmployees()
         setEmployees(data)
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error fetching employees:", error)
         // Redirect to login if unauthorized
-        if (error?.message === 'No authentication token') {
+        if (error instanceof Error && error.message === 'No authentication token') {
           router.push('/login')
         }
       }
@@ -115,9 +115,9 @@ export default function Employees() {
         is_active: true
       });
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error adding employee:", error);
-      setError(error.message || 'Failed to create employee');
+      setError(error instanceof Error ? error.message : 'Failed to create employee');
     }
   }
 

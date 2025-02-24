@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import Layout from "./components/layout"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 
 // Dynamically import the Graph component (instead of BarChart)
 const GraphComponent = dynamic(() => import("./components/Graph"), { ssr: false })
@@ -23,7 +22,6 @@ export default function Dashboard() {
   const [employeesCount, setEmployeesCount] = useState<number>(0)
   const [clientsCount, setClientsCount] = useState<number>(0)
   const [conversionData, setConversionData] = useState<ConversionData[]>([])
-  const [loadingMetrics, setLoadingMetrics] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const getAuthHeaders = (): Record<string, string> => {
@@ -43,14 +41,14 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        setLoadingMetrics(true)
         const headers = getAuthHeaders()
         // Fetch paid invoices
         const invRes = await fetch("http://localhost:8000/api/invoices/?status=PAID", { headers })
         if (!invRes.ok) throw new Error("Failed to fetch paid invoices")
         const invoices = await invRes.json()
         const revenue = invoices.reduce(
-          (acc: number, item: any) => acc + Number(item.total_amount || 0),
+          (acc: number, item: { total_amount: number | string }) =>
+            acc + Number(item.total_amount || 0),
           0
         )
         setPaidRevenue(revenue)
@@ -80,7 +78,6 @@ export default function Dashboard() {
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error fetching metrics")
       } finally {
-        setLoadingMetrics(false)
       }
     }
 
